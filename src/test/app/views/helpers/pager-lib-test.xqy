@@ -10,83 +10,212 @@ declare namespace xhtml = "http://www.w3.org/1999/xhtml";
 
 declare option xdmp:mapping "false";
 
-declare function t:next-page()
-{
-  t:assert-not-exists(pager:next-page(1, 10, 3, "", "")),
-
-  let $actual := pager:next-page(11, 10, 50, "/search", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?index=21", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:next-page(21, 10, 50, "/search?a=b", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?a=b&amp;index=31", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:next-page(21, 10, 50, "/search?index=21&amp;a=b", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?index=31&amp;a=b", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:next-page(21, 10, 50, "/search?a=b&amp;index=21", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?a=b&amp;index=31", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:next-page(21, 10, 50, "/search?index=21", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?index=31", $actual/xhtml:a/@href/fn:string())
-  )
-};
-
-declare function t:previous-page()
-{
-  t:assert-not-exists(pager:previous-page(1, 10, 50, "", "")),
-
-  let $actual := pager:previous-page(11, 10, 50, "/search", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?index=1", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:previous-page(21, 10, 50, "/search?a=b", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?a=b&amp;index=11", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:previous-page(21, 10, 50, "/search?index=21&amp;a=b", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?index=11&amp;a=b", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:previous-page(21, 10, 50, "/search?a=b&amp;index=21", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?a=b&amp;index=11", $actual/xhtml:a/@href/fn:string())
-  ),
-
-  let $actual := pager:previous-page(21, 10, 50, "/search?index=21", "index")
-  return (
-    t:assert-exists($actual/xhtml:a),
-    t:assert-equal("/search?index=11", $actual/xhtml:a/@href/fn:string())
-  )
-};
-
-declare function t:show-page-numbers()
+declare function t:paginate()
 {
   t:assert-equal(
-    "Results 11 to 20 of 50",
-    fn:string(pager:show-page-numbers(11, 10, 50))),
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>1</current-page>
+      <total-pages>4</total-pages>
+      <page-length>100</page-length>
+      <previous-index/>
+      <previous-page/>
+      <next-index>101</next-index>
+      <next-page>2</next-page>
+      <showing>
+        <start>1</start>
+        <end>100</end>
+        <total>301</total>
+      </showing>
+      <links>
+        <link>1</link>
+        <link>2</link>
+        <link>3</link>
+        <link>4</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="1" total="301" page-length="100"/>, 4)),
+  t:assert-equal(
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>2</current-page>
+      <total-pages>4</total-pages>
+      <page-length>100</page-length>
+      <previous-index>1</previous-index>
+      <previous-page>1</previous-page>
+      <next-index>201</next-index>
+      <next-page>3</next-page>
+      <showing>
+        <start>101</start>
+        <end>200</end>
+        <total>301</total>
+      </showing>
+      <links>
+        <link>1</link>
+        <link>2</link>
+        <link>3</link>
+        <link>4</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="101" total="301" page-length="100"/>, 4)),
+  t:assert-equal(
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>3</current-page>
+      <total-pages>4</total-pages>
+      <page-length>100</page-length>
+      <previous-index>101</previous-index>
+      <previous-page>2</previous-page>
+      <next-index>301</next-index>
+      <next-page>4</next-page>
+      <showing>
+        <start>201</start>
+        <end>300</end>
+        <total>301</total>
+      </showing>
+      <links>
+        <link>1</link>
+        <link>2</link>
+        <link>3</link>
+        <link>4</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="201" total="301" page-length="100"/>, 4)),
+  t:assert-equal(
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>4</current-page>
+      <total-pages>4</total-pages>
+      <page-length>100</page-length>
+      <previous-index>201</previous-index>
+      <previous-page>3</previous-page>
+      <next-index/>
+      <next-page/>
+      <showing>
+        <start>301</start>
+        <end>301</end>
+        <total>301</total>
+      </showing>
+      <links>
+        <link>1</link>
+        <link>2</link>
+        <link>3</link>
+        <link>4</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="301" total="301" page-length="100"/>, 4)),
 
   t:assert-equal(
-    "Results 11 to 15 of 15",
-    fn:string(pager:show-page-numbers(11, 10, 15)))
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>1</current-page>
+      <total-pages>11</total-pages>
+      <page-length>100</page-length>
+      <previous-index/>
+      <previous-page/>
+      <next-index>101</next-index>
+      <next-page>2</next-page>
+      <showing>
+        <start>1</start>
+        <end>100</end>
+        <total>1001</total>
+      </showing>
+      <links>
+        <link>1</link>
+        <link>2</link>
+        <link>3</link>
+        <link>4</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="1" total="1001" page-length="100"/>, 4)),
+  t:assert-equal(
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>2</current-page>
+      <total-pages>11</total-pages>
+      <page-length>100</page-length>
+      <previous-index>1</previous-index>
+      <previous-page>1</previous-page>
+      <next-index>201</next-index>
+      <next-page>3</next-page>
+      <showing>
+        <start>101</start>
+        <end>200</end>
+        <total>1001</total>
+      </showing>
+      <links>
+        <link>2</link>
+        <link>3</link>
+        <link>4</link>
+        <link>5</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="101" total="1001" page-length="100"/>, 4)),
+  t:assert-equal(
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>3</current-page>
+      <total-pages>11</total-pages>
+      <page-length>100</page-length>
+      <previous-index>101</previous-index>
+      <previous-page>2</previous-page>
+      <next-index>301</next-index>
+      <next-page>4</next-page>
+      <showing>
+        <start>201</start>
+        <end>300</end>
+        <total>1001</total>
+      </showing>
+      <links>
+        <link>1</link>
+        <link>2</link>
+        <link>3</link>
+        <link>4</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="201" total="1001" page-length="100"/>, 4)),
+  t:assert-equal(
+    <pagination xmlns="http://marklogic.com/roxy/pager-lib">
+      <current-page>11</current-page>
+      <total-pages>11</total-pages>
+      <page-length>100</page-length>
+      <previous-index>901</previous-index>
+      <previous-page>10</previous-page>
+      <next-index/>
+      <next-page/>
+      <showing>
+        <start>1001</start>
+        <end>1001</end>
+        <total>1001</total>
+      </showing>
+      <links>
+        <link>8</link>
+        <link>9</link>
+        <link>10</link>
+        <link>11</link>
+      </links>
+    </pagination>,
+    pager:paginate(<response xmlns="http://marklogic.com/appservices/search" start="1001" total="1001" page-length="100"/>, 4)),
+  t:assert-equal(
+    (
+      <span class="page-numbers" xmlns="http://www.w3.org/1999/xhtml">Results <b>1</b> to <b>100</b> of <b>1001</b></span>,
+      <span class="next" xmlns="http://www.w3.org/1999/xhtml"><a href="/search?index=101">»</a></span>
+    ),
+    pager:pagination(<response xmlns="http://marklogic.com/appservices/search" start="1" total="1001" page-length="100"/>, "/search", "index")),
+
+  t:assert-equal(
+    (
+      <span class="previous" xmlns="http://www.w3.org/1999/xhtml"><a href="/search?index=701">«</a></span>,
+      <span class="page-numbers" xmlns="http://www.w3.org/1999/xhtml">Results <b>801</b> to <b>900</b> of <b>1001</b></span>,
+      <span class="next" xmlns="http://www.w3.org/1999/xhtml"><a href="/search?index=901">»</a></span>
+    ),
+    pager:pagination(<response xmlns="http://marklogic.com/appservices/search" start="801" total="1001" page-length="100"/>, "/search", "index")),
+
+  t:assert-equal(
+    (
+      <span class="previous" xmlns="http://www.w3.org/1999/xhtml"><a href="/search?index=801">«</a></span>,
+      <span class="page-numbers" xmlns="http://www.w3.org/1999/xhtml">Results <b>901</b> to <b>1000</b> of <b>1001</b></span>,
+      <span class="next" xmlns="http://www.w3.org/1999/xhtml"><a href="/search?index=1001">»</a></span>
+    ),
+    pager:pagination(<response xmlns="http://marklogic.com/appservices/search" start="901" total="1001" page-length="100"/>, "/search", "index")),
+
+  t:assert-equal(
+    (
+      <span class="previous" xmlns="http://www.w3.org/1999/xhtml"><a href="/search?index=901">«</a></span>,
+      <span class="page-numbers" xmlns="http://www.w3.org/1999/xhtml">Results <b>1001</b> to <b>1001</b> of <b>1001</b></span>
+    ),
+    pager:pagination(<response xmlns="http://marklogic.com/appservices/search" start="1001" total="1001" page-length="100"/>, "/search", "index"))
 };

@@ -2,27 +2,34 @@ class Help
   def self.usage
     <<-DOC.strip_heredoc
 
-      Usage: ml COMMAND [ARGS]
+      Usage: ml ENVIRONMENT COMMAND [ARGS]
 
       Deployment Commands:
        init           Creates configuration files for you to customize
        initcpf        Creates cpf configuration files for you to customize
        info           Return settings for a given environment
+       credentials    Configures user and password for a given environment
        bootstrap      Configures your application on the MarkLogic server
        wipe           Remove your configuration from the MarkLogic server
        restart        Restart your MarkLogic server
        deploy         Loads modules, data, cpf configuration into the server
        load           Loads a file or folder into the server
        clean          Removes all files from the cpf, modules, or content databases
-       info           Prints the configuration information
+       info           Prints the environment-specific configuration information
        test           Runs xquery unit tests
        recordloader   Runs RecordLoader
        xqsync         Runs XQSync
        corb           Runs Corb
 
-      Roxy MVC Commands:
+      Roxy Scaffolding commands:
        create       Creates a controller or view or model
        index        Adds an index to the configuration
+       extend       Create a REST API service extension
+       transform    Create a REST API transformation
+
+      Other commands:
+       upgrade      Upgrades the Roxy files
+       capture      Capture the source code of an existing App Builder application
 
       All commands can be run with -h for more information.
 
@@ -127,6 +134,14 @@ class Help
     end
   end
 
+  def self.credentials
+    <<-DOC.strip_heredoc
+      Usage: ml {env} credentials
+
+      Prompts the user for admin credentials and writes them into the appropriate properties file
+    DOC
+  end
+
   def self.info
     <<-DOC.strip_heredoc
       Usage: ml {env} info [options]
@@ -143,12 +158,15 @@ class Help
       Usage: ml init [application-name] [options]
 
       Optional Parameters:
-        application-name    # The name of your application
+        application-name                  # The name of your application
+      Required option:
+        --server-version=version-number   # Version of target MarkLogic Server
+                                          # Must be 4, 5, 6, or 7
       General options:
-        --force             # Force reset all configuration files
-        --force-properties  # Force reset the properties file. (build.properties)
-        --force-config      # Force reset the configuration file (ml-config.xml)
-        -v, [--verbose]     # Verbose output
+        --force                           # Force reset all configuration files
+        --force-properties                # Force reset the properties file. (build.properties)
+        --force-config                    # Force reset the configuration file (ml-config.xml)
+        -v, [--verbose]                   # Verbose output
 
 
       Initializes your application by creating the necessary config files.
@@ -218,6 +236,7 @@ class Help
 
         modules # deploys code to your modules db in the given environment
         content # deploys content to your content db in the given environment
+        schemas # deploys schemas to your schemas db in the given environment
         cpf     # deploys your cpf config to the server in the given environment
     DOC
   end
@@ -244,7 +263,8 @@ class Help
       Please choose a WHAT below.
 
         modules # removes all data from the modules db in the given environment
-        content # removes all data from the content dv in the given environment
+        content # removes all data from the content db in the given environment
+        schemas # removes all data from the schemas db in the given environment
         cpf     # removes your cpf config from the server in the given environment
     DOC
   end
@@ -345,6 +365,75 @@ class Help
     <<-DOC.strip_heredoc
       Usage: ml index
         ml will ask questions to help you build an index
+    DOC
+  end
+
+  def self.extend
+    <<-DOC.strip_heredoc
+      Usage: ml extend [prefix:]extension
+        Create a REST API service extension with the provided name. If a prefix
+        is provided, it will be used in the extension module.
+
+        Example:
+          $ ml extend ml:tag
+          will create a tag.xqy library module in your rest-ext directory, using
+          the "ml" prefix for the functions.
+    DOC
+  end
+
+  def self.transform
+    <<-DOC.strip_heredoc
+      Usage: ml transform [prefix:]name [type]
+        Create a REST API transformation with the provided name. By default,
+        the transform will be XSLT.
+
+      prefix:
+        The prefix will be used as the namespace prefix.
+
+      name:
+        This name will be used for the file in which the transform is stored
+        and the name used when deploying to MarkLogic.
+
+      type:
+        (xslt|xqy)
+
+      Example:
+        $ ml transform ex:sample
+        will create a sample.xsl file in your rest-transform directory,
+        using the "ex" namespace prefix.
+
+      Example:
+        $ ml transform sample
+        will create a sample.xsl file in your rest-transform directory.
+
+      Example:
+        $ ml transform sample xqy
+        will create a sample.xqy library module in your rest-transform directory,
+        using a built-in value as the prefix for the functions.
+    DOC
+  end
+
+  def self.upgrade
+    <<-DOC.strip_heredoc
+      Usage: ml upgrade --branch=[dev|master]
+        Upgrades Roxy files in the current project, using files from the
+        specified branch on GitHub. Any project will have its deploy directory
+        upgraded. Projects of app-type "mvc" or "hybrid" will also have their
+        src/roxy/ directory upgraded.
+
+      branch: (required)
+        The name of the Roxy GitHub branch to use for the upgrade.
+    DOC
+  end
+
+  def self.capture
+    <<-DOC.strip_heredoc
+      Usage: ml {env} capture --modules-db=[name of modules database]
+        Captures the source and REST API configuration for an existing
+        Application Builder-based application.
+
+      modules-db: (required)
+        The modules database of the App Builder application.
     DOC
   end
 

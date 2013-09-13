@@ -17,22 +17,6 @@ declare function t:build-uri()
   t:assert-equal("/app/views/tester/main.json.xqy", u:build-uri("/", "/app/views/tester/main.json.xqy"))
 };
 
-declare function t:join-file()
-{
-  t:assert-equal("base/suffix", u:join-file(("base", "suffix"))),
-  t:assert-equal("base/suffix", u:join-file(("base", "/suffix"))),
-  t:assert-equal("base/suffix", u:join-file(("base/", "suffix"))),
-  t:assert-equal("base/suffix", u:join-file(("base/", "/suffix"))),
-  t:assert-equal("/app/views/tester/main.json.xqy", u:join-file(("/", "/app/views/tester/main.json.xqy"))),
-
-  t:assert-equal("/base/suffix", u:join-file(("/base/", "suffix"))),
-  t:assert-equal("/base/suffix", u:join-file(("/base", "/suffix"))),
-  t:assert-equal("/base/suffix", u:join-file(("/base/", "/suffix"))),
-  t:assert-equal("/base/suffix/", u:join-file(("/base/", "suffix/"))),
-  t:assert-equal("/base/suffix/", u:join-file(("/base", "/suffix/"))),
-  t:assert-equal("/base/suffix/", u:join-file(("/base/", "/suffix/")))
-};
-
 declare function t:string-pad()
 {
   t:assert-equal("000", u:string-pad("0", 3))

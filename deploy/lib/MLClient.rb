@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
+begin
+require 'io/console'
+rescue LoadError
+end
+
+require 'uri'
+
 class MLClient
   def initialize(options)
     @ml_username = options[:user_name]
@@ -44,11 +51,13 @@ class MLClient
 
   def build_request_params(url, verb)
     uri = URI.parse url
+
     if (!@request[verb])
       @request[verb] = Net::HTTP.const_get(verb.capitalize).new(uri.request_uri)
       @request[verb].add_field 'Connection', 'keep-alive'
       @request[verb].add_field 'Keep-Alive', '30'
       @request[verb].add_field 'User-Agent', 'Roxy'
+      @request[verb].add_field 'content-type', 'text/plain'
     else
       @request[verb].set_path uri.request_uri
     end
@@ -70,6 +79,8 @@ class MLClient
     headers.each do |k, v|
       request_params[:request][k] = v
     end
+
+    raise ExitException.new("Don't combine params and body. One or the other please") if (params && body)
 
     if (params)
       request_params[:request].set_form_data(params)
@@ -97,7 +108,13 @@ class MLClient
 
   def password_prompt
     if (@ml_password == "") then
-      @ml_password = prompt "Password for admin user: "
+      if STDIN.respond_to?(:noecho)
+      print "Password for admin user: "
+      @ml_password = STDIN.noecho(&:gets).chomp
+      print "\n"
+      else
+        raise ExitException.new("Upgrade to Ruby >= 1.9 for password prompting on the shell. Or you can set password= in your properties file")
+      end
     end
   end
 end

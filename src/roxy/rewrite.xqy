@@ -19,9 +19,6 @@ import module namespace config = "http://marklogic.com/roxy/config" at "/app/con
 import module namespace def = "http://marklogic.com/roxy/defaults" at "/roxy/config/defaults.xqy";
 import module namespace req = "http://marklogic.com/roxy/request" at "/roxy/lib/request.xqy";
 
-import module namespace conf = "http://marklogic.com/rest-api/endpoints/config"
-    at "/MarkLogic/rest-api/endpoints/config.xqy";
-
 declare namespace rest = "http://marklogic.com/appservices/rest";
 
 declare option xdmp:mapping "false";
@@ -30,11 +27,30 @@ let $uri  := xdmp:get-request-url()
 let $method := xdmp:get-request-method()
 let $path := xdmp:get-request-path()
 let $final-uri :=
-req:rewrite(
+  req:rewrite(
     $uri,
     $path,
     $method,
-  $config:ROXY-ROUTES)return
+    $config:ROXY-ROUTES)
+return
   if ($final-uri) then $final-uri
   else
-    (conf:rewrite($method, $uri, $path), $uri)[1]
+    try
+    {
+      xdmp:eval('
+        import module namespace conf = "http://marklogic.com/rest-api/endpoints/config"
+          at "/MarkLogic/rest-api/endpoints/config.xqy";
+        declare variable $method external;
+        declare variable $uri external;
+        declare variable $path external;
+        (conf:rewrite($method, $uri, $path), $uri)[1]',
+        (xs:QName("method"), $method,
+         xs:QName("uri"), $uri,
+         xs:QName("path"), $path))
+    }
+    catch($ex) {
+      if ($ex/error:code = "XDMP-MODNOTFOUND") then
+        $uri
+      else
+        xdmp:rethrow()
+    }

@@ -34,6 +34,35 @@ declare function m:get-tests-from-filesystem(
   )
 };
 
+(:~
+ : Builds a uri from a base and a suffix
+ : Handles properly concatenating with slashes
+ :
+ : @param $base - the base of the uri
+ : @param $suffix - the suffix of the uri
+ :)
+declare function m:join-file($parts as xs:string+)
+{
+  m:join-file($parts, "/")
+};
+
+declare function m:join-file($parts as xs:string+, $separator as xs:string?)
+{
+  fn:string-join(
+    (
+      fn:replace($parts[1], "(.*)/$", "$1"),
+      let $count := fn:count($parts)
+      return
+        if ($count > 2) then
+          for $part in $parts[2 to $count - 1]
+          return
+            fn:replace($part, "^/(.*)|(.*)/$", "$1$2")
+        else (),
+      fn:replace($parts[fn:last()], "^/(.*)", "$1")
+    ),
+    "/")
+};
+
 declare function m:get-tests-from-modules-with-lexicon(
   $root as xs:string,
   $filter as xs:string)
@@ -41,7 +70,7 @@ declare function m:get-tests-from-modules-with-lexicon(
   xdmp:eval('
     declare variable $uri as xs:string external;
     cts:uri-match($uri)',
-    (xs:QName('uri'), u:join-file(($root, fn:concat('*', $filter)))),
+    (xs:QName('uri'), m:join-file(($root, fn:concat('*', $filter)))),
     <options xmlns="xdmp:eval">
       <database>{$MODULES-DB}</database>
     </options>)
@@ -70,7 +99,7 @@ declare function m:get-tests-from-modules-sans-lexicon(
 :)
 declare function m:list()
 {
-  m:list(u:join-file((xdmp:modules-root(), "test/")), "-test.xqy")
+  m:list(m:join-file((xdmp:modules-root(), "test/")), "-test.xqy")
 };
 
 (:
