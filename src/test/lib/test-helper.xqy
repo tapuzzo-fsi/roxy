@@ -117,7 +117,7 @@ declare function t:get-modules-file($file as xs:string)
       xdmp:document-get(
         t:build-uri(xdmp:modules-root(), $file),
         <options xmlns="xdmp:document-get">
-          
+
         </options>)
       (:<format>text</format>:)
     return
@@ -416,7 +416,7 @@ declare function t:multipart-encode($boundary, $form-name, $filename, $content-t
             'Content-Disposition: form-data; name="', $form-name, '"; filename="', $filename, '"', $RN,
             'Content-Type: ', $content-type, $RN,
             'Content-Length: ', xdmp:binary-size($file), $RN)))),
-        fn:string(data($file)),
+        fn:string(fn:data($file)),
         xs:hexBinary(xs:base64Binary(xdmp:base64-encode(fn:concat($RN, '--', $boundary, '--', $RN))))
       )
     )
@@ -431,7 +431,7 @@ declare function t:upload-file(
   $file as binary())
 {
   let $boundary := "------------12345xyz"
-  let $multipart-encode := 
+  let $multipart-encode :=
     t:multipart-encode (
       $boundary,
       $form-data-name,
