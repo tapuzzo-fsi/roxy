@@ -117,6 +117,36 @@ declare function local:four-o-four()
   </html>
 };
 
+declare function local:four-o-one($ex)
+{
+  xdmp:set-response-code(401, "Unauthorized"),
+  <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>401 Unauthorized</title>
+      <meta name="robots" content="noindex,nofollow"/>
+    </head>
+    <body>
+      <h1>401 Unauthorized</h1>
+      <p>{$ex/error:format-string/fn:string(.)}</p>
+    </body>
+  </html>
+};
+
+declare function local:four-o-three($ex)
+{
+  xdmp:set-response-code(403, "Forbidden"),
+  <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title>403 Forbidden</title>
+      <meta name="robots" content="noindex,nofollow"/>
+    </head>
+    <body>
+      <h1>403 Forbidden</h1>
+      <p>{$ex/error:format-string/fn:string(.)}</p>
+    </body>
+  </html>
+};
+
 declare function local:error($title as xs:string?, $heading, $msg)
 {
   xdmp:set-response-code(500, 'Internal Server Error'),
@@ -158,6 +188,10 @@ else if ($ex/error:name = $MESSAGES/message/@code) then
   local:error($MESSAGES/message[@code = $ex/error:name]/@title, fn:string($ex/error:message), $MESSAGES/message[@code = $ex/error:name]/node())
 else if ($ex/error:name = "four-o-four" or 404 = xdmp:get-response-code()[1]) then
   local:four-o-four()
+else if ($ex/error:name = "UNAUTHORIZED" or 401 = xdmp:get-response-code()[1]) then
+  local:four-o-one($ex)
+else if ($ex/error:name = "FORBIDDEN" or 403 = xdmp:get-response-code()[1]) then
+  local:four-o-three($ex)
 else if ($ex/error:code = "HTTP-ERROR") then
 (
   xdmp:set-response-code(xs:int($ex/error:data/error:datum[1]), $ex/error:data/error:datum[2]),

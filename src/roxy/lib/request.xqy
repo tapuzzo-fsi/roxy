@@ -311,18 +311,21 @@ declare function req:expand-resources($nodes)
               <rest:uri-param name="func">index</rest:uri-param>
               <rest:uri-param name="format">$1</rest:uri-param>
               <rest:http method="GET"/>
+              { $n/rest:policy[fn:not(fn:exists(@method)) or @method eq "GET"] }
             </rest:request>,
             <rest:request uri="{fn:concat('^/', $res, '/new\.?(\w*)$')}" endpoint="/roxy/query-router.xqy">
               <rest:uri-param name="controller">{$res}</rest:uri-param>
               <rest:uri-param name="func">new</rest:uri-param>
               <rest:uri-param name="format">$1</rest:uri-param>
               <rest:http method="GET"/>
+              { $n/rest:policy[fn:not(fn:exists(@method)) or @method eq "GET"] }
             </rest:request>,
             <rest:request uri="{fn:concat('^/', $res, '\.?(\w*)$')}" endpoint="/roxy/update-router.xqy">
               <rest:uri-param name="controller">{$res}</rest:uri-param>
               <rest:uri-param name="func">create</rest:uri-param>
               <rest:uri-param name="format">$2</rest:uri-param>
               <rest:http method="POST"/>
+              { $n/rest:policy[fn:not(fn:exists(@method)) or @method eq "POST"] }
             </rest:request>,
             <rest:request uri="{fn:concat('^/', $res, '/([\w\d_\-]*)\.?(\w*)$')}" endpoint="/roxy/query-router.xqy">
               <rest:uri-param name="controller">{$res}</rest:uri-param>
@@ -330,6 +333,7 @@ declare function req:expand-resources($nodes)
               <rest:uri-param name="format">$2</rest:uri-param>
               <rest:uri-param name="id">$1</rest:uri-param>
               <rest:http method="GET"/>
+              { $n/rest:policy[fn:not(fn:exists(@method)) or @method eq "GET"] }
             </rest:request>,
             <rest:request uri="{fn:concat('^/', $res, '/([\w\d_\-]*)/edit\.?(\w*)$')}" endpoint="/roxy/query-router.xqy">
               <rest:uri-param name="controller">{$res}</rest:uri-param>
@@ -337,6 +341,7 @@ declare function req:expand-resources($nodes)
               <rest:uri-param name="format">$2</rest:uri-param>
               <rest:uri-param name="id">$1</rest:uri-param>
               <rest:http method="GET"/>
+              { $n/rest:policy[fn:not(fn:exists(@method)) or @method eq "GET"] }
             </rest:request>,
             <rest:request uri="{fn:concat('^/', $res, '/([\w\d_\-]*)\.?(\w*)$')}" endpoint="/roxy/update-router.xqy">
               <rest:uri-param name="controller">{$res}</rest:uri-param>
@@ -344,6 +349,7 @@ declare function req:expand-resources($nodes)
               <rest:uri-param name="format">$2</rest:uri-param>
               <rest:uri-param name="id">$1</rest:uri-param>
               <rest:http method="PUT"/>
+              { $n/rest:policy[fn:not(fn:exists(@method)) or @method eq "PUT"] }
             </rest:request>,
             <rest:request uri="{fn:concat('^/', $res, '/([\w\d_\-]*)\.?(\w*)$')}" endpoint="/roxy/update-router.xqy">
               <rest:uri-param name="controller">{$res}</rest:uri-param>
@@ -351,6 +357,7 @@ declare function req:expand-resources($nodes)
               <rest:uri-param name="format">$2</rest:uri-param>
               <rest:uri-param name="id">$1</rest:uri-param>
               <rest:http method="DELETE"/>
+              { $n/rest:policy[fn:not(fn:exists(@method)) or @method eq "DELETE"] }
             </rest:request>
           )
         else
@@ -392,6 +399,17 @@ declare function req:rewrite($url, $path, $verb, $routes as element(rest:routes)
                        [if (*:http/@method) then $verb = *:http/@method
                         else fn:true()]
     )[1]
+
+  (: Invoke any policies, policy failures are signaled by throwing an error, so if everything is OK, the flow will continue :)
+  let $_ := xdmp:log(('matching-request', $matching-request), "fine")
+  let $policyOK := 
+    for $policy as element(rest:policy) in $matching-request/rest:policy[fn:not(fn:exists(@method)) or @method eq ../rest:http/@method]
+    let $policyPath as xs:string := fn:concat('/app/policies/', $policy/@name, '.xqy')
+    return (
+      xdmp:log(fn:concat("Checking policy ", $policyPath, " for ", $path), "fine"),
+      xdmp:invoke($policyPath, (fn:node-name($policy), $policy))
+    )
+
   let $final-uri as xs:string? :=
     if ($matching-request) then
       if ($matching-request/@redirect) then
